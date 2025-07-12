@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Card Game</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+        body {
+            background: #18140a;
+            color: #ffe066;
+            font-family: 'Share Tech Mono', 'Consolas', 'Courier New', monospace;
+            min-height: 100vh;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            position: relative;
+        }
+        /* Scanline effect */
+        body::before {
+            content: '';
+            pointer-events: none;
+            position: fixed;
+            left: 0; right: 0; top: 0; bottom: 0;
+            z-index: 100;
+            background: repeating-linear-gradient(
+                to bottom,
+                rgba(0,0,0,0) 0px,
+                rgba(0,0,0,0) 2px,
+                rgba(0,0,0,0.13) 3px,
+                rgba(0,0,0,0.13) 4px
+            );
+        }
+        .crt-container {
+            background: #23200e;
+            border: 2px solid #ffe066;
+            box-shadow: 0 0 0 4px #18140a, 0 0 24px #18140a inset;
+            border-radius: 6px;
+            margin-top: 40px;
+            padding: 32px 32px 24px 32px;
+            width: 700px;
+            max-width: 98vw;
+            position: relative;
+        }
+        .crt-avatar {
+            position: absolute;
+            top: 18px;
+            left: 18px;
+            width: 64px;
+            height: 64px;
+            border: 2px solid #ffe066;
+            border-radius: 8px;
+            background: #18140a;
+            object-fit: contain;
+            box-shadow: 0 0 8px #ffe06644;
+        }
+        h1 {
+            color: #ffe066;
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+            text-shadow: 0 0 2px #ffe066, 0 0 8px #18140a;
+            font-family: inherit;
+            margin-left: 90px;
+        }
+        .crt-section {
+            border: 2px solid #ffe066;
+            border-radius: 4px;
+            margin-bottom: 18px;
+            padding: 18px 18px 10px 18px;
+            background: #18140a;
+            box-shadow: 0 0 0 2px #18140a;
+        }
+        .crt-section-title {
+            font-size: 1.1rem;
+            color: #ffe066;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+            font-weight: bold;
+            text-shadow: 0 0 2px #ffe066;
+        }
+        .crt-row {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            margin-bottom: 10px;
+        }
+        .crt-label {
+            color: #ffe066;
+            min-width: 120px;
+            font-weight: bold;
+        }
+        .crt-value {
+            color: #ffe066;
+        }
+        .crt-mood {
+            font-size: 1.1rem;
+            margin-bottom: 18px;
+            color: #ffe066;
+        }
+        .crt-online {
+            color: #ffe066;
+            font-weight: bold;
+            margin-left: 8px;
+        }
+        .crt-cards-container {
+            display: flex;
+            gap: 18px;
+            justify-content: center;
+            margin: 18px 0 0 0;
+        }
+        .card {
+            background: #23200e;
+            border: 2px solid #ffe066;
+            border-radius: 6px;
+            width: 110px;
+            height: 160px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            box-shadow: 0 0 0 2px #18140a;
+            cursor: pointer;
+            position: relative;
+        }
+        .card img {
+            width: 90px;
+            height: 140px;
+            object-fit: contain;
+            background: #18140a;
+            border-radius: 3px;
+            box-shadow: 0 0 0 1px #ffe06644;
+        }
+        .card.selected {
+            border-color: #fff3a3;
+            box-shadow: 0 0 8px 2px #ffe066;
+        }
+        .card.disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        .crt-battle-section {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 24px 0 18px 0;
+            min-height: 170px;
+            position: relative;
+        }
+        .battle-card {
+            width: 120px;
+            height: 160px;
+            background: #23200e;
+            border: 2px solid #ffe066;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 24px;
+            position: relative;
+        }
+        .battle-card img {
+            width: 100px;
+            height: 140px;
+            object-fit: contain;
+            background: #18140a;
+            border-radius: 3px;
+        }
+        .vs-text {
+            font-size: 2rem;
+            color: #ffe066;
+            font-weight: bold;
+            margin: 0 18px;
+            text-shadow: 0 0 2px #ffe066;
+        }
+        .crt-result-overlay {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2.2rem;
+            font-weight: bold;
+            color: #ffe066;
+            background: rgba(24, 20, 10, 0.92);
+            border: 2px solid #ffe066;
+            border-radius: 8px;
+            padding: 18px 38px;
+            z-index: 10;
+            letter-spacing: 2px;
+            text-shadow: 0 0 8px #ffe066, 0 0 2px #18140a;
+            display: none;
+        }
+        .crt-result-overlay.win { color: #fff3a3; border-color: #fff3a3; }
+        .crt-result-overlay.lose { color: #ffb366; border-color: #ffb366; }
+        .crt-result-overlay.draw { color: #ffe066; border-color: #ffe066; }
+        .crt-btn {
+            background: #18140a;
+            color: #ffe066;
+            border: 2px solid #ffe066;
+            border-radius: 4px;
+            font-family: inherit;
+            font-size: 1.1rem;
+            padding: 10px 32px;
+            margin-top: 18px;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+        }
+        .crt-btn:hover {
+            background: #23200e;
+            color: #fff3a3;
+        }
+        @media (max-width: 900px) {
+            .crt-container { width: 99vw; padding: 8px; }
+            .crt-cards-container, .crt-battle-section { gap: 8px; }
+            .card, .battle-card { width: 80px; height: 110px; }
+            .card img, .battle-card img { width: 60px; height: 90px; }
+            .crt-avatar { width: 40px; height: 40px; top: 8px; left: 8px; }
+            h1 { font-size: 1.2rem; margin-left: 50px; }
+            .crt-result-overlay { font-size: 1.1rem; padding: 8px 16px; }
+        }
+        .crt-result-overlay-text {
+            position: absolute;
+            left: 50%;
+            top: 28%; /* Move even higher above VS */
+            transform: translate(-50%, -50%);
+            font-size: 1.2rem;
+            font-weight: bold;
+            background: none;
+            border: none;
+            border-radius: 0;
+            padding: 0;
+            z-index: 10;
+            letter-spacing: 2px;
+            text-shadow: 0 0 8px #ffe066, 0 0 2px #18140a;
+        }
+        .crt-result-overlay-text.win { color: #fff3a3; }
+        .crt-result-overlay-text.lose { color: #ffb366; }
+        .crt-result-overlay-text.draw { color: #ffe066; }
+    </style>
+</head>
+<body>
+    <div class="crt-container">
+        <img src="assets/tiny.png" alt="Avatar" class="crt-avatar" />
+        <h1>E-Card</h1>
+        <div class="crt-mood">Mood: focando</div>
+        <div class="crt-section">
+            <div class="crt-section-title">Status</div>
+            <div class="crt-row"><span class="crt-label">Player</span> <span class="crt-value">ONLINE!</span></div>
+            <div class="crt-row"><span class="crt-label">Score</span> <span class="crt-value">You: <span id="player-score">0</span> | Computer: <span id="computer-score">0</span></span></div>
+            <div class="crt-row"><span class="crt-label">Round</span> <span class="crt-value" id="round-number">1</span></div>
+        </div>
+        <div class="crt-section">
+            <div class="crt-section-title">Computer's Cards</div>
+            <div class="crt-cards-container" id="computer-cards"></div>
+        </div>
+        <div class="crt-battle-section" id="battle-section" style="display:none;">
+            <div class="battle-card" id="player-battle-card"><img id="player-battle-img" src="" alt="Player Card"></div>
+            <div class="vs-text">VS</div>
+            <div class="battle-card" id="computer-battle-card"><img id="computer-battle-img" src="" alt="Computer Card"></div>
+            <div class="crt-result-overlay" id="battle-result-overlay"></div>
+        </div>
+        <div class="crt-section">
+            <div class="crt-section-title">Your Cards</div>
+            <div class="crt-cards-container" id="player-cards"></div>
+        </div>
+        <div id="final-extra-msg-box" style="display:none; margin: 24px auto 0 auto; background:#23200e; border:2px solid #ffe066; border-radius:8px; color:#ffe066; font-size:1.2rem; font-family:inherit; padding:16px 32px; max-width: 400px; text-align:center; box-shadow:0 0 16px #18140a; letter-spacing:1px;"></div>
+        <button class="crt-btn" id="reset-btn" onclick="resetGame()">New Game</button>
+    </div>
+    <script>
+        // Game state
+        let gameState = {
+            currentRound: 1,
+            playerScore: 0,
+            computerScore: 0,
+            playerCards: [],
+            computerCards: [],
+            playerSelectedCard: null,
+            computerSelectedCard: null,
+            gameOver: false
+        };
+        // Card types with image paths
+        const CARD_TYPES = {
+            EMPEROR: { name: 'Emperor', image: 'assets/emperor.468e393b.jpg' },
+            CITIZEN: { name: 'Citizen', image: 'assets/citizen.095ee3dc.jpg' },
+            SLAVE: { name: 'Slave', image: 'assets/slave.cdf638fd.jpg' },
+            BACK: { name: 'Card Back', image: 'assets/back.7eac01d7.jpg' }
+        };
+        // Preload images
+        function preloadImages() {
+            const imageUrls = [
+                CARD_TYPES.EMPEROR.image,
+                CARD_TYPES.CITIZEN.image,
+                CARD_TYPES.SLAVE.image,
+                CARD_TYPES.BACK.image,
+                'assets/tiny.png'
+            ];
+            imageUrls.forEach(url => {
+                const img = new Image();
+                img.src = url;
+            });
+        }
+        // Fisher-Yates shuffle
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+        // Initialize the game
+        function initGame() {
+            preloadImages();
+            gameState.playerCards = [
+                CARD_TYPES.EMPEROR,
+                CARD_TYPES.CITIZEN,
+                CARD_TYPES.CITIZEN,
+                CARD_TYPES.CITIZEN,
+                CARD_TYPES.CITIZEN
+            ];
+            shuffle(gameState.playerCards);
+            gameState.computerCards = [
+                CARD_TYPES.SLAVE,
+                CARD_TYPES.CITIZEN,
+                CARD_TYPES.CITIZEN,
+                CARD_TYPES.CITIZEN,
+                CARD_TYPES.CITIZEN
+            ];
+            shuffle(gameState.computerCards);
+            gameState.currentRound = 1;
+            gameState.playerScore = 0;
+            gameState.computerScore = 0;
+            gameState.playerSelectedCard = null;
+            gameState.computerSelectedCard = null;
+            gameState.gameOver = false;
+            renderPlayerCards();
+            renderComputerCards();
+            updateDisplay();
+        }
+        // Render computer cards (showing card backs)
+        function renderComputerCards() {
+            const container = document.getElementById('computer-cards');
+            container.innerHTML = '';
+            gameState.computerCards.forEach(() => {
+                const cardElement = document.createElement('div');
+                cardElement.className = 'card';
+                cardElement.style.cursor = 'default';
+                const img = document.createElement('img');
+                img.src = CARD_TYPES.BACK.image;
+                img.alt = 'Card Back';
+                cardElement.appendChild(img);
+                container.appendChild(cardElement);
+            });
+        }
+        // Render player cards
+        function renderPlayerCards() {
+            const container = document.getElementById('player-cards');
+            container.innerHTML = '';
+            gameState.playerCards.forEach((card, index) => {
+                const cardElement = document.createElement('div');
+                cardElement.className = 'card';
+                const img = document.createElement('img');
+                img.src = card.image;
+                img.alt = card.name;
+                cardElement.appendChild(img);
+                cardElement.onclick = () => selectCard(index);
+                container.appendChild(cardElement);
+            });
+        }
+        // Player selects a card
+        function selectCard(index) {
+            if (gameState.gameOver || gameState.playerSelectedCard !== null) return;
+            // Remove player's card
+            gameState.playerSelectedCard = gameState.playerCards[index];
+            gameState.playerCards.splice(index, 1);
+            // Remove AI's card
+            const aiIndex = Math.floor(Math.random() * gameState.computerCards.length);
+            gameState.computerSelectedCard = gameState.computerCards[aiIndex];
+            gameState.computerCards.splice(aiIndex, 1);
+            renderPlayerCards();
+            renderComputerCards();
+            determineWinner();
+        }
+        // Determine the winner and handle round logic
+        function determineWinner() {
+            const playerCard = gameState.playerSelectedCard;
+            const computerCard = gameState.computerSelectedCard;
+            let result = '';
+            if (playerCard.name === computerCard.name) {
+                result = 'DRAW';
+            } else if (
+                (playerCard.name === CARD_TYPES.EMPEROR.name && computerCard.name === CARD_TYPES.CITIZEN.name) ||
+                (playerCard.name === CARD_TYPES.CITIZEN.name && computerCard.name === CARD_TYPES.SLAVE.name) ||
+                (playerCard.name === CARD_TYPES.SLAVE.name && computerCard.name === CARD_TYPES.EMPEROR.name)
+            ) {
+                result = 'WIN';
+                gameState.playerScore++;
+            } else {
+                result = 'LOSE';
+                gameState.computerScore++;
+            }
+            showBattleAnimation(playerCard, computerCard, result);
+            // Increment round after each battle
+            setTimeout(() => {
+                if (gameState.currentRound < 5) {
+                    gameState.currentRound++;
+                }
+                if (gameState.currentRound > 5 || gameState.playerCards.length === 0) {
+                    gameState.gameOver = true;
+                    setTimeout(() => {
+                        displayGameOver();
+                    }, 1000);
+                } else {
+                    setTimeout(() => {
+                        prepareNextRound();
+                    }, 1000);
+                }
+                updateDisplay();
+            }, 2200);
+        }
+        // Show battle animation
+        function showBattleAnimation(playerCard, computerCard, result) {
+            const battleSection = document.getElementById('battle-section');
+            const playerBattleCard = document.getElementById('player-battle-card');
+            const computerBattleCard = document.getElementById('computer-battle-card');
+            const playerBattleImg = document.getElementById('player-battle-img');
+            const computerBattleImg = document.getElementById('computer-battle-img');
+            const resultOverlay = document.getElementById('battle-result-overlay');
+            playerBattleImg.src = playerCard.image;
+            computerBattleImg.src = computerCard.image;
+            battleSection.style.display = 'flex';
+            resultOverlay.style.display = 'none';
+            setTimeout(() => {
+                playerBattleCard.classList.add('animate-in');
+                computerBattleCard.classList.add('animate-in');
+            }, 100);
+            setTimeout(() => {
+                playerBattleCard.classList.add('animate-battle');
+                computerBattleCard.classList.add('animate-battle');
+            }, 800);
+            setTimeout(() => {
+                resultOverlay.textContent = result;
+                resultOverlay.className = 'crt-result-overlay-text ' + result.toLowerCase();
+                resultOverlay.style.display = 'block';
+            }, 1200);
+            setTimeout(() => {
+                resultOverlay.style.display = 'none';
+                displayResult(result);
+            }, 2200);
+        }
+        // Display result (hidden, just for game over)
+        function displayResult(result) {
+            const resultSection = document.getElementById('result-section');
+            const resultText = document.getElementById('result-text');
+            resultSection.style.display = 'none';
+            resultText.textContent = result;
+            resultText.className = 'result ' + result.toLowerCase();
+        }
+        // Prepare for next round
+        function prepareNextRound() {
+            gameState.playerSelectedCard = null;
+            gameState.computerSelectedCard = null;
+            document.getElementById('battle-section').style.display = 'none';
+            document.getElementById('result-section').style.display = 'none';
+            document.getElementById('battle-result-overlay').style.display = 'none';
+            renderPlayerCards();
+            renderComputerCards();
+        }
+        // Display game over (robust, always correct)
+        function displayGameOver() {
+            // Hide battle area and any overlays
+            document.getElementById('battle-section').style.display = 'none';
+            document.getElementById('battle-result-overlay').style.display = 'none';
+            // Determine message
+            let message = '';
+            if (gameState.playerScore > gameState.computerScore) {
+                message = 'You win';
+            } else if (gameState.computerScore > gameState.playerScore) {
+                message = 'You lost gimme your fingers';
+            } else {
+                message = "It's a draw";
+            }
+            // Show the message below the Your Cards section
+            let msgBox = document.getElementById('final-extra-msg-box');
+            msgBox.textContent = message;
+            msgBox.style.display = 'block';
+            // Mark game as over
+            gameState.gameOver = true;
+        }
+        // Update display
+        function updateDisplay() {
+            document.getElementById('round-number').textContent = gameState.currentRound;
+            document.getElementById('player-score').textContent = gameState.playerScore;
+            document.getElementById('computer-score').textContent = gameState.computerScore;
+        }
+        // Reset game (robust, clears all state/UI)
+        function resetGame() {
+            // Hide the extra message on reset
+            let msgBox = document.getElementById('final-extra-msg-box');
+            if (msgBox) msgBox.style.display = 'none';
+            // Clear both card containers
+            document.getElementById('player-cards').innerHTML = '';
+            document.getElementById('computer-cards').innerHTML = '';
+            // Hide and clear battle area
+            const battleSection = document.getElementById('battle-section');
+            battleSection.style.display = 'none';
+            document.getElementById('player-battle-img').src = '';
+            document.getElementById('computer-battle-img').src = '';
+            document.getElementById('battle-result-overlay').style.display = 'none';
+            // Reset all game state
+            gameState = {
+                currentRound: 1,
+                playerScore: 0,
+                computerScore: 0,
+                playerCards: [],
+                computerCards: [],
+                playerSelectedCard: null,
+                computerSelectedCard: null,
+                gameOver: false
+            };
+            initGame();
+        }
+        window.onload = initGame;
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+        body {
+            background: #18140a;
+            color: #ffe066;
+            font-family: 'Share Tech Mono', 'Consolas', 'Courier New', monospace;
+            min-height: 100vh;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            position: relative;
+        }
+        /* Scanline effect */
+        body::before {
+            content: '';
+            pointer-events: none;
+            position: fixed;
+            left: 0; right: 0; top: 0; bottom: 0;
+            z-index: 100;
+            background: repeating-linear-gradient(
+                to bottom,
+                rgba(0,0,0,0) 0px,
+                rgba(0,0,0,0) 2px,
+                rgba(0,0,0,0.13) 3px,
+                rgba(0,0,0,0.13) 4px
+            );
+        }
+        .crt-container {
+            background: #23200e;
+            border: 2px solid #ffe066;
+            box-shadow: 0 0 0 4px #18140a, 0 0 24px #18140a inset;
+            border-radius: 6px;
+            margin-top: 40px;
+            padding: 32px 32px 24px 32px;
+            width: 700px;
+            max-width: 98vw;
+            position: relative;
+        }
+        .crt-avatar {
+            position: absolute;
+            top: 18px;
+            left: 18px;
+            width: 64px;
+            height: 64px;
+            border: 2px solid #ffe066;
+            border-radius: 8px;
+            background: #18140a;
+            object-fit: contain;
+            box-shadow: 0 0 8px #ffe06644;
+        }
+        h1 {
+            color: #ffe066;
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+            text-shadow: 0 0 2px #ffe066, 0 0 8px #18140a;
+            font-family: inherit;
+            margin-left: 90px;
+        }
+        .crt-section {
+            border: 2px solid #ffe066;
+            border-radius: 4px;
+            margin-bottom: 18px;
+            padding: 18px 18px 10px 18px;
+            background: #18140a;
+            box-shadow: 0 0 0 2px #18140a;
+        }
+        .crt-section-title {
+            font-size: 1.1rem;
+            color: #ffe066;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+            font-weight: bold;
+            text-shadow: 0 0 2px #ffe066;
+        }
+        .crt-row {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            margin-bottom: 10px;
+        }
+        .crt-label {
+            color: #ffe066;
+            min-width: 120px;
+            font-weight: bold;
+        }
+        .crt-value {
+            color: #ffe066;
+        }
+        .crt-mood {
+            font-size: 1.1rem;
+            margin-bottom: 18px;
+            color: #ffe066;
+        }
+        .crt-online {
+            color: #ffe066;
+            font-weight: bold;
+            margin-left: 8px;
+        }
+        .crt-cards-container {
+            display: flex;
+            gap: 18px;
+            justify-content: center;
+            margin: 18px 0 0 0;
+        }
+        .card {
+            background: #23200e;
+            border: 2px solid #ffe066;
+            border-radius: 6px;
+            width: 110px;
+            height: 160px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            box-shadow: 0 0 0 2px #18140a;
+            cursor: pointer;
+            position: relative;
+        }
+        .card img {
+            width: 90px;
+            height: 140px;
+            object-fit: contain;
+            background: #18140a;
+            border-radius: 3px;
+            box-shadow: 0 0 0 1px #ffe06644;
+        }
+        .card.selected {
+            border-color: #fff3a3;
+            box-shadow: 0 0 8px 2px #ffe066;
+        }
+        .card.disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        .crt-battle-section {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 24px 0 18px 0;
+            min-height: 170px;
+            position: relative;
+        }
+        .battle-card {
+            width: 120px;
+            height: 160px;
+            background: #23200e;
+            border: 2px solid #ffe066;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 24px;
+            position: relative;
+        }
+        .battle-card img {
+            width: 100px;
+            height: 140px;
+            object-fit: contain;
+            background: #18140a;
+            border-radius: 3px;
+        }
+        .vs-text {
+            font-size: 2rem;
+            color: #ffe066;
+            font-weight: bold;
+            margin: 0 18px;
+            text-shadow: 0 0 2px #ffe066;
+        }
+        .crt-result-overlay {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2.2rem;
+            font-weight: bold;
+            color: #ffe066;
+            background: rgba(24, 20, 10, 0.92);
+            border: 2px solid #ffe066;
+            border-radius: 8px;
+            padding: 18px 38px;
+            z-index: 10;
+            letter-spacing: 2px;
+            text-shadow: 0 0 8px #ffe066, 0 0 2px #18140a;
+            display: none;
+        }
+        .crt-result-overlay.win { color: #fff3a3; border-color: #fff3a3; }
+        .crt-result-overlay.lose { color: #ffb366; border-color: #ffb366; }
+        .crt-result-overlay.draw { color: #ffe066; border-color: #ffe066; }
+        .crt-btn {
+            background: #18140a;
+            color: #ffe066;
+            border: 2px solid #ffe066;
+            border-radius: 4px;
+            font-family: inherit;
+            font-size: 1.1rem;
+            padding: 10px 32px;
+            margin-top: 18px;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+        }
+        .crt-btn:hover {
+            background: #23200e;
+            color: #fff3a3;
+        }
+        @media (max-width: 900px) {
+            .crt-container { width: 99vw; padding: 8px; }
+            .crt-cards-container, .crt-battle-section { gap: 8px; }
+            .card, .battle-card { width: 80px; height: 110px; }
+            .card img, .battle-card img { width: 60px; height: 90px; }
+            .crt-avatar { width: 40px; height: 40px; top: 8px; left: 8px; }
+            h1 { font-size: 1.2rem; margin-left: 50px; }
+            .crt-result-overlay { font-size: 1.1rem; padding: 8px 16px; }
+        }
+        .crt-result-overlay-text {
+            position: absolute;
+            left: 50%;
+            top: 28%; /* Move even higher above VS */
+            transform: translate(-50%, -50%);
+            font-size: 1.2rem;
+            font-weight: bold;
+            background: none;
+            border: none;
+            border-radius: 0;
+            padding: 0;
+            z-index: 10;
+            letter-spacing: 2px;
+            text-shadow: 0 0 8px #ffe066, 0 0 2px #18140a;
+        }
+        .crt-result-overlay-text.win { color: #fff3a3; }
+        .crt-result-overlay-text.lose { color: #ffb366; }
+        .crt-result-overlay-text.draw { color: #ffe066; }
+    </style>
+</body>
+</html>
