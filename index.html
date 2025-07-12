@@ -241,7 +241,7 @@
 </head>
 <body>
     <div class="crt-container">
-        <img src="assets/tiny.png" alt="Avatar" class="crt-avatar" />
+        <img src="./assets/tiny.png" alt="Avatar" class="crt-avatar" />
         <h1>E-Card</h1>
         <div class="crt-mood">Mood: focando</div>
         <div class="crt-section">
@@ -281,10 +281,10 @@
         };
         // Card types with image paths
         const CARD_TYPES = {
-            EMPEROR: { name: 'Emperor', image: 'assets/emperor.468e393b.jpg' },
-            CITIZEN: { name: 'Citizen', image: 'assets/citizen.095ee3dc.jpg' },
-            SLAVE: { name: 'Slave', image: 'assets/slave.cdf638fd.jpg' },
-            BACK: { name: 'Card Back', image: 'assets/back.7eac01d7.jpg' }
+            EMPEROR: { name: 'Emperor', image: './assets/emperor.468e393b.jpg' },
+            CITIZEN: { name: 'Citizen', image: './assets/citizen.095ee3dc.jpg' },
+            SLAVE: { name: 'Slave', image: './assets/slave.cdf638fd.jpg' },
+            BACK: { name: 'Card Back', image: './assets/back.7eac01d7.jpg' }
         };
         // Preload images
         function preloadImages() {
@@ -293,10 +293,12 @@
                 CARD_TYPES.CITIZEN.image,
                 CARD_TYPES.SLAVE.image,
                 CARD_TYPES.BACK.image,
-                'assets/tiny.png'
+                './assets/tiny.png'
             ];
             imageUrls.forEach(url => {
                 const img = new Image();
+                img.onload = () => console.log('Loaded:', url);
+                img.onerror = () => console.error('Failed to load:', url);
                 img.src = url;
             });
         }
